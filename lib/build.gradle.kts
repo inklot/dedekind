@@ -24,6 +24,7 @@ repositories {
 
 dependencies {
     testImplementation(libs.kotest)
+    testImplementation(libs.kotest.property)
 }
 
 tasks.withType<Test>().configureEach {
