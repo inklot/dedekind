@@ -43,13 +43,28 @@ jobs:
     needs: check
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: 21
-      - uses: gradle/gradle-build-action@v3.5.0
+          distribution: 'zulu'
+          java-version: 17
+
+      - uses: gradle/gradle-build-action@v3
+
+      - name: Get commit SHA
+        id: commit
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Get base version from gradle.properties
+        id: version
+        run: |
+          BASE_VERSION=$(grep '^VERSION_NAME=' gradle.properties | cut -d'=' -f2 | sed 's/-SNAPSHOT$//')
+          echo "base=$BASE_VERSION" >> $GITHUB_OUTPUT
+
       - name: Publish SNAPSHOT to Maven Central
-        run: ./gradlew publishAllPublicationsToMavenCentral
+        run: ./gradlew publishAllPublicationsToMavenCentral -Pversion=${{ steps.version.outputs.base }}-${{ steps.commit.outputs.sha }}-SNAPSHOT
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: '${{ secrets.ORG_GRADLE_PROJECT_MAVENCENTRALUSERNAME }}'
           ORG_GRADLE_PROJECT_mavenCentralPassword: '${{ secrets.ORG_GRADLE_PROJECT_MAVENCENTRALPASSWORD }}'
